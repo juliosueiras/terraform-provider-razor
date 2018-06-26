@@ -21,7 +21,13 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"razor_repo": resourceRepo(),
+			"razor_repo":   resourceRepo(),
+			"razor_tag":    resourceTag(),
+			"razor_policy": resourcePolicy(),
+		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"razor_task": dataSourceTask(),
+			"razor_node": dataSourceNode(),
 		},
 
 		ConfigureFunc: providerConfigure,
