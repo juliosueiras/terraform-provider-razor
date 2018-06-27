@@ -11,7 +11,7 @@ import (
 func resourcePolicy() *schema.Resource {
 	return &schema.Resource{
 		Create: resourcePolicyCreate,
-		Exists: resourcePolicyExist,
+		Exists: resourcePolicyExists,
 		Read:   resourcePolicyRead,
 		Update: resourcePolicyUpdate,
 		Delete: resourcePolicyDelete,
@@ -121,24 +121,42 @@ func resourcePolicyCreate(d *schema.ResourceData, meta interface{}) error {
 	return resourcePolicyRead(d, meta)
 }
 
-func resourcePolicyExist(d *schema.ResourceData, meta interface{}) error {
+func resourcePolicyExists(d *schema.ResourceData, meta interface{}) (bool, error) {
 	config := meta.(*Config)
-	_, err := config.Client.Policy.PolicyDetails(d.Id())
 
-	if err.Error != "" {
-		return errors.New(err.Error)
+	_, err := config.Client.Policy.PolicyDetails(d.Id())
+	if err.Error == "no policy matched id="+d.Id() {
+		d.MarkNewResource()
+		return false, nil
 	}
 
-	return nil
-}
+	if err.Error != "" {
+		return false, errors.New(err.Error)
+	}
 
+	return true, nil
+}
 func resourcePolicyRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
-	_, err := config.Client.Policy.PolicyDetails(d.Id())
+	newPolicy, err := config.Client.Policy.PolicyDetails(d.Id())
+
+	if err.Error == "no policy matched id="+d.Id() {
+		d.MarkNewResource()
+		return nil
+	}
 
 	if err.Error != "" {
 		return errors.New(err.Error)
 	}
+
+	d.Set("broker", newPolicy.Broker.Name)
+	d.Set("max_count", newPolicy.MaxCount)
+	d.Set("enabled", newPolicy.Enabled)
+	d.Set("hostname", newPolicy.Configuration.HostnamePattern)
+	d.Set("node_metadata", newPolicy.NodeMetadata)
+	d.Set("repo", newPolicy.Repo.Name)
+	d.Set("root_password", newPolicy.Configuration.RootPassword)
+	d.Set("tags", newPolicy.Tags)
 
 	return nil
 }
@@ -146,12 +164,12 @@ func resourcePolicyRead(d *schema.ResourceData, meta interface{}) error {
 func resourcePolicyUpdate(d *schema.ResourceData, meta interface{}) error {
 	log.Printf("[INFO] Updating Policy Update: %s", d.Id())
 
-	//	config := meta.(*Config)
-	//	_, err := config.Client.Policy.UpdatePolicyTask(d.Id(), d.Get("task").(string))
-	//
-	//	if err.Error != "" {
-	//		return errors.New(err.Error)
-	//	}
+	config := meta.(*Config)
+	_, err := config.Client.Policy.UpdatePolicyTask(d.Id(), d.Get("task").(string))
+
+	if err.Error != "" {
+		return errors.New(err.Error)
+	}
 
 	return resourcePolicyRead(d, meta)
 }
