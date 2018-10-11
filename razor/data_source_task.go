@@ -7,7 +7,8 @@ import (
 
 func dataSourceTask() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceTaskRead,
+		Read:   dataSourceTaskRead,
+		Exists: dataSourceTaskExists,
 
 		Schema: map[string]*schema.Schema{
 			"name": &schema.Schema{
@@ -64,4 +65,16 @@ func dataSourceTaskRead(d *schema.ResourceData, meta interface{}) error {
 
 	d.Set("description", task.Description)
 	return nil
+}
+
+func dataSourceTaskExists(d *schema.ResourceData, meta interface{}) (bool, error) {
+	config := meta.(*Config)
+	name := d.Get("name").(string)
+	_, err := config.Client.Task.TaskDetails(name)
+
+	if err.Error != "" {
+		return false, errors.New(err.Error)
+	}
+
+	return true, nil
 }

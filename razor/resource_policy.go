@@ -140,15 +140,11 @@ func resourcePolicyRead(d *schema.ResourceData, meta interface{}) error {
 	config := meta.(*Config)
 	newPolicy, err := config.Client.Policy.PolicyDetails(d.Id())
 
-	if err.Error == "no policy matched id="+d.Id() {
-		d.MarkNewResource()
-		return nil
-	}
-
 	if err.Error != "" {
 		return errors.New(err.Error)
 	}
 
+	d.Set("task", newPolicy.Task.Name)
 	d.Set("broker", newPolicy.Broker.Name)
 	d.Set("max_count", newPolicy.MaxCount)
 	d.Set("enabled", newPolicy.Enabled)
